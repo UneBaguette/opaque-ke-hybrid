@@ -1,17 +1,20 @@
 //! Hybrid client login wrapping [`ClientLogin`] with ML-KEM-768.
 
-use ml_kem::{
-    kem::{Decapsulate, DecapsulationKey}, EncodedSizeUser, KemCore, MlKem768,
-    MlKem768Params,
-};
 use ml_kem::array::Array;
+use ml_kem::{
+    Encoded, EncodedSizeUser, KemCore, MlKem768, MlKem768Params,
+    kem::{Decapsulate, DecapsulationKey},
+};
 use opaque_ke::rand::{CryptoRng, RngCore};
-use opaque_ke::{CipherSuite, ClientLogin, ClientLoginFinishParameters, CredentialFinalization, CredentialResponse};
+use opaque_ke::{
+    CipherSuite, ClientLogin, ClientLoginFinishParameters, CredentialFinalization,
+    CredentialResponse,
+};
 use zeroize::Zeroizing;
 
-use crate::combine::{combine, HYBRID_KEY_LEN};
+use crate::combine::{HYBRID_KEY_LEN, combine};
 use crate::error::HybridError;
-use crate::messages::{HybridCredentialRequest, CT_LEN, EK_LEN};
+use crate::messages::{CT_LEN, EK_LEN, HybridCredentialRequest};
 
 /// Client state held between [`HybridClientLogin::start`] and [`HybridClientLogin::finish`].
 pub struct HybridClientLogin<CS: CipherSuite> {
@@ -71,6 +74,43 @@ impl<CS: CipherSuite> HybridClientLogin<CS> {
         })
     }
 
+    /// Returns the underlying opaque-ke client state for serialization
+    /// at API boundaries.
+    pub fn opaque_state(&self) -> &ClientLogin<CS> {
+        &self.opaque_state
+    }
+
+    /// Serialize the ML-KEM-768 decapsulation key for storage at API boundaries.
+    /// Treat this with the same care as [`ClientLogin::serialize`]
+    /// It is secret key material.
+    pub fn mlkem_dk_bytes(&self) -> Vec<u8> {
+        self.mlkem_dk.as_bytes().as_slice().to_vec()
+    }
+
+    /// Reconstruct a [`HybridClientLogin`] from an already-deserialized
+    /// [`ClientLogin`] and raw ML-KEM decapsulation key bytes.
+    ///
+    /// Intended for use at any API boundary where client state must be
+    /// serialized between the start and finish steps.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`HybridError::Serialization`] if `mlkem_dk_bytes` is not
+    /// a valid ML-KEM-768 decapsulation key.
+    pub fn from_parts(
+        opaque_state: ClientLogin<CS>,
+        mlkem_dk_bytes: &[u8],
+    ) -> Result<Self, HybridError> {
+        let encoded = Encoded::<DecapsulationKey<MlKem768Params>>::try_from(mlkem_dk_bytes)
+            .map_err(|_| HybridError::Serialization)?;
+        let mlkem_dk = DecapsulationKey::<MlKem768Params>::from_bytes(&encoded);
+
+        Ok(Self {
+            opaque_state,
+            mlkem_dk,
+        })
+    }
+
     /// Finish a hybrid login.
     ///
     /// Accepts the already-deserialized [`CredentialResponse`]. The caller
@@ -87,19 +127,18 @@ impl<CS: CipherSuite> HybridClientLogin<CS> {
         mlkem_ct_bytes: &[u8; CT_LEN],
         params: ClientLoginFinishParameters<CS>,
     ) -> Result<HybridClientLoginFinishResult<CS>, HybridError> {
-        let opaque_result = self.opaque_state
+        let opaque_result = self
+            .opaque_state
             .finish(rng, password, opaque_response, params)?;
 
         let mlkem_ct = Array::from(*mlkem_ct_bytes);
 
-        let mlkem_ss = self.mlkem_dk
+        let mlkem_ss = self
+            .mlkem_dk
             .decapsulate(&mlkem_ct)
             .map_err(|_| HybridError::DecapsulationFailed)?;
 
-        let session_key = combine(
-            opaque_result.session_key.as_ref(),
-            mlkem_ss.as_ref(),
-        )?;
+        let session_key = combine(&opaque_result.session_key, &mlkem_ss)?;
 
         Ok(HybridClientLoginFinishResult {
             session_key,

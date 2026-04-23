@@ -93,6 +93,41 @@ impl<CS: CipherSuite> HybridServerLogin<CS> {
         })
     }
 
+    /// Serialize the ML-KEM shared secret for storage at API boundaries.
+    /// Treat this as highly sensitive — it is half of the hybrid session key.
+    pub fn mlkem_ss_bytes(&self) -> Vec<u8> {
+        self.mlkem_ss.to_vec()
+    }
+
+    /// Reconstruct a [`HybridServerLogin`] from an already-deserialized
+    /// [`ServerLogin`] and raw ML-KEM shared secret bytes.
+    ///
+    /// Intended for use at any API boundary where server state must be
+    /// serialized between the start and finish steps.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`HybridError::Serialization`] if `mlkem_ss_bytes` is empty.
+    pub fn from_parts(
+        opaque_state: ServerLogin<CS>,
+        mlkem_ss_bytes: &[u8],
+    ) -> Result<Self, HybridError> {
+        if mlkem_ss_bytes.is_empty() {
+            return Err(HybridError::Serialization);
+        }
+
+        Ok(Self {
+            opaque_state,
+            mlkem_ss: Zeroizing::new(mlkem_ss_bytes.to_vec()),
+        })
+    }
+
+    /// Returns the underlying opaque-ke server state for serialization
+    /// at API boundaries.
+    pub fn opaque_state(&self) -> &ServerLogin<CS> {
+        &self.opaque_state
+    }
+
     /// Finish a hybrid server login.
     ///
     /// Runs [`ServerLogin::finish`] and combines the opaque session key
