@@ -1,0 +1,24 @@
+[package]
+name = "opaque-ke-hybrid"
+version = "0.0.1"
+edition = "2024"
+description = "ML-KEM hybrid extension for opaque-ke"
+repository = "https://github.com/UneBaguette/opaque-ke-hybrid"
+license = "MIT"
+keywords = ["opaque", "pake", "ml-kem", "post-quantum", "hybrid"]
+categories = ["cryptography", "authentication"]
+
+[dependencies]
+opaque-ke = { version = "4.0.1", features = ["ristretto255", "argon2"] }
+ml-kem = "0.2"
+hkdf = "=0.12.4"
+sha2 = "=0.10.9"
+zeroize = { version = "1.8", features = ["derive"] }
+
+[dev-dependencies]
+sha2 = "=0.10.9"
+rand = "=0.8.5"
+
+[features]
+default = ["ristretto255"]
+ristretto255 = ["opaque-ke/ristretto255"]
