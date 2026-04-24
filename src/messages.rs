@@ -33,7 +33,7 @@ impl HybridCredentialRequest {
     pub fn new(opaque_bytes: Vec<u8>, mlkem_ek: [u8; EK_LEN]) -> Self {
         Self {
             opaque_bytes,
-            mlkem_ek
+            mlkem_ek,
         }
     }
 
@@ -72,7 +72,8 @@ impl HybridCredentialRequest {
 
         Ok(Self {
             opaque_bytes: bytes[..split].to_vec(),
-            mlkem_ek: bytes[split..].try_into()
+            mlkem_ek: bytes[split..]
+                .try_into()
                 .map_err(|_| HybridError::Serialization)?,
         })
     }
@@ -81,7 +82,10 @@ impl HybridCredentialRequest {
 impl HybridCredentialResponse {
     /// Construct from serialized opaque-ke bytes and an ML-KEM ciphertext.
     pub fn new(opaque_bytes: Vec<u8>, mlkem_ct: [u8; CT_LEN]) -> Self {
-        Self { opaque_bytes, mlkem_ct }
+        Self {
+            opaque_bytes,
+            mlkem_ct,
+        }
     }
 
     /// Returns the serialized opaque-ke credential response bytes.
@@ -119,7 +123,8 @@ impl HybridCredentialResponse {
 
         Ok(Self {
             opaque_bytes: bytes[..split].to_vec(),
-            mlkem_ct: bytes[split..].try_into()
+            mlkem_ct: bytes[split..]
+                .try_into()
                 .map_err(|_| HybridError::Serialization)?,
         })
     }

@@ -20,9 +20,9 @@
 #![warn(missing_docs, clippy::pedantic)]
 
 pub mod client;
-pub mod server;
-pub mod messages;
 pub mod error;
+pub mod messages;
+pub mod server;
 
 pub(crate) mod combine;
 

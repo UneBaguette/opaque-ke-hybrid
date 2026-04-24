@@ -14,8 +14,8 @@ opaque-ke = { version = "4.0.1", features = ["ristretto255", "argon2"] }
 ml-kem = "0.2"
 # Pinned to match opaque-ke 4.0.1's ecosystem (hkdf 0.12, sha2 0.10)
 # When opaque-ke 4.1.0 stabilizes, review native kem feature
-hkdf = "=0.12.4"
-sha2 = "=0.10.9"
+hkdf = "0.12"
+sha2 = "0.10"
 zeroize = { version = "1.8", features = ["derive"] }
 
 [dev-dependencies]
