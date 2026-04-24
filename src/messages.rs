@@ -2,10 +2,10 @@
 //!
 //! Wire format:
 //!
-//! `HybridCredentialRequest`  = CredentialRequest bytes || mlkem_ek bytes
-//! `HybridCredentialResponse` = CredentialResponse bytes || mlkem_ct bytes
+//! `HybridCredentialRequest`  = `CredentialRequest` bytes || `mlkem_ek` bytes
+//! `HybridCredentialResponse` = `CredentialResponse` bytes || `mlkem_ct` bytes
 //!
-//! All sizes are statically known — no length prefix required.
+//! All sizes are statically known. No length prefix required.
 
 use crate::error::HybridError;
 
@@ -30,6 +30,7 @@ pub struct HybridCredentialResponse {
 
 impl HybridCredentialRequest {
     /// Construct from serialized opaque-ke bytes and an ML-KEM encapsulation key.
+    #[must_use]
     pub fn new(opaque_bytes: Vec<u8>, mlkem_ek: [u8; EK_LEN]) -> Self {
         Self {
             opaque_bytes,
@@ -38,11 +39,13 @@ impl HybridCredentialRequest {
     }
 
     /// Returns the serialized opaque-ke credential request bytes.
+    #[must_use]
     pub fn opaque_bytes(&self) -> &[u8] {
         &self.opaque_bytes
     }
 
     /// Returns the ML-KEM-768 encapsulation key bytes.
+    #[must_use]
     pub fn mlkem_ek(&self) -> &[u8; EK_LEN] {
         &self.mlkem_ek
     }
@@ -50,6 +53,7 @@ impl HybridCredentialRequest {
     /// Serialize for transmission.
     ///
     /// Format: `[opaque_ke bytes][mlkem_ek (1184 bytes)]`
+    #[must_use]
     pub fn serialize(&self) -> Vec<u8> {
         let mut out = Vec::with_capacity(self.opaque_bytes.len() + EK_LEN);
 
@@ -63,6 +67,10 @@ impl HybridCredentialRequest {
     ///
     /// Splits the last 1184 bytes as the ML-KEM encapsulation key,
     /// the rest as the opaque-ke credential request.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`HybridError::Serialization`] if the input is shorter than the expected ML-KEM key length.
     pub fn deserialize(bytes: &[u8]) -> Result<Self, HybridError> {
         if bytes.len() < EK_LEN {
             return Err(HybridError::Serialization);
@@ -81,6 +89,7 @@ impl HybridCredentialRequest {
 
 impl HybridCredentialResponse {
     /// Construct from serialized opaque-ke bytes and an ML-KEM ciphertext.
+    #[must_use]
     pub fn new(opaque_bytes: Vec<u8>, mlkem_ct: [u8; CT_LEN]) -> Self {
         Self {
             opaque_bytes,
@@ -89,11 +98,13 @@ impl HybridCredentialResponse {
     }
 
     /// Returns the serialized opaque-ke credential response bytes.
+    #[must_use]
     pub fn opaque_bytes(&self) -> &[u8] {
         &self.opaque_bytes
     }
 
     /// Returns the ML-KEM-768 ciphertext bytes.
+    #[must_use]
     pub fn mlkem_ct(&self) -> &[u8; CT_LEN] {
         &self.mlkem_ct
     }
@@ -101,6 +112,7 @@ impl HybridCredentialResponse {
     /// Serialize for transmission.
     ///
     /// Format: `[opaque_ke bytes][mlkem_ct (1088 bytes)]`
+    #[must_use]
     pub fn serialize(&self) -> Vec<u8> {
         let mut out = Vec::with_capacity(self.opaque_bytes.len() + CT_LEN);
 
@@ -114,6 +126,10 @@ impl HybridCredentialResponse {
     ///
     /// Splits the last 1088 bytes as the ML-KEM ciphertext,
     /// the rest as the opaque-ke credential response.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`HybridError::Serialization`] if the input is too short or malformed.
     pub fn deserialize(bytes: &[u8]) -> Result<Self, HybridError> {
         if bytes.len() < CT_LEN {
             return Err(HybridError::Serialization);

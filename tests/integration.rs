@@ -354,10 +354,9 @@ fn test_server_from_parts_invalid_bytes() {
 
     let client_start = HybridClientLogin::<TestSuite>::start(&mut rng, b"password").unwrap();
 
-    let opaque_request = CredentialRequest::<TestSuite>::deserialize(
-        &client_start.opaque_message.serialize().to_vec(),
-    )
-    .unwrap();
+    let opaque_request =
+        CredentialRequest::<TestSuite>::deserialize(&client_start.opaque_message.serialize())
+            .unwrap();
 
     let server_start = HybridServerLogin::<TestSuite>::start(
         &mut rng,

@@ -19,8 +19,8 @@ use crate::messages::{CT_LEN, EK_LEN, HybridCredentialResponse};
 /// Server state held between [`HybridServerLogin::start`] and
 /// [`HybridServerLogin::finish`].
 pub struct HybridServerLogin<CS: CipherSuite> {
-    opaque_state: opaque_ke::ServerLogin<CS>,
-    /// ML-KEM shared secret — held until finish to combine with opaque_ss
+    opaque_state: ServerLogin<CS>,
+    /// ML-KEM shared secret. Held until finish to combine with `opaque_ss`
     mlkem_ss: Zeroizing<Vec<u8>>,
 }
 
@@ -36,7 +36,7 @@ pub struct HybridServerLoginStartResult<CS: CipherSuite> {
 
 /// Result of [`HybridServerLogin::finish`].
 pub struct HybridServerLoginFinishResult {
-    /// Combined hybrid session key : HKDF(opaque_ss || mlkem_ss).
+    /// Combined hybrid session key : HKDF(`opaque_ss` || `mlkem_ss`).
     /// Matches the client's session key on successful login.
     pub session_key: Zeroizing<[u8; HYBRID_KEY_LEN]>,
 }
@@ -47,6 +47,12 @@ impl<CS: CipherSuite> HybridServerLogin<CS> {
     /// Runs [`ServerLogin::start`] with the opaque-ke credential request,
     /// then encapsulates against the client's ML-KEM encapsulation key.
     /// The ciphertext is sent back inside [`HybridCredentialResponse`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`HybridError::Protocol`] if the OPAQUE server start fails.
+    /// Returns [`HybridError::EncapsulationFailed`] if ML-KEM encapsulation fails.
+    /// Returns [`HybridError::Serialization`] if the ML-KEM ciphertext encoding fails.
     pub fn start(
         rng: &mut (impl CryptoRng + RngCore),
         server_setup: &ServerSetup<CS>,
@@ -73,7 +79,7 @@ impl<CS: CipherSuite> HybridServerLogin<CS> {
         // Encapsulate. Produces ciphertext to send + shared secret to keep
         let (mlkem_ct, mlkem_ss) = mlkem_ek
             .encapsulate(rng)
-            .map_err(|_| HybridError::EncapsulationFailed)?;
+            .map_err(|()| HybridError::EncapsulationFailed)?;
 
         // Serialize mlkem_ct to fixed-size array
         let mlkem_ct_bytes: [u8; CT_LEN] = mlkem_ct
@@ -94,7 +100,7 @@ impl<CS: CipherSuite> HybridServerLogin<CS> {
     }
 
     /// Serialize the ML-KEM shared secret for storage at API boundaries.
-    /// Treat this as highly sensitive — it is half of the hybrid session key.
+    /// Treat this as highly sensitive. It is half of the hybrid session key.
     pub fn mlkem_ss_bytes(&self) -> Vec<u8> {
         self.mlkem_ss.to_vec()
     }
@@ -132,6 +138,11 @@ impl<CS: CipherSuite> HybridServerLogin<CS> {
     ///
     /// Runs [`ServerLogin::finish`] and combines the opaque session key
     /// with the stored ML-KEM shared secret via HKDF-SHA512.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`HybridError::Protocol`] if the OPAQUE server finish fails.
+    /// Returns [`HybridError::KeyDerivation`] if the HKDF combination fails.
     pub fn finish(
         self,
         opaque_finalization: CredentialFinalization<CS>,

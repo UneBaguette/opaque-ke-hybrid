@@ -1,7 +1,7 @@
 //! **ML-KEM** hybrid extension for **opaque-ke**.
 //!
 //! Adds post-quantum hardening to the **AKE** layer by running
-//! **ML-KEM-768** in parallel with the existing **TripleDh** key exchange,
+//! **ML-KEM-768** in parallel with the existing **`TripleDh`** key exchange,
 //! combining both shared secrets via **HKDF-SHA512**.
 //!
 //! The session key produced by this crate is resistant to
