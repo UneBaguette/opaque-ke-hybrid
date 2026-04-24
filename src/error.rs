@@ -29,6 +29,8 @@ impl fmt::Display for HybridError {
     }
 }
 
+impl std::error::Error for HybridError {}
+
 impl From<opaque_ke::errors::ProtocolError> for HybridError {
     fn from(e: opaque_ke::errors::ProtocolError) -> Self {
         Self::Protocol(e)
