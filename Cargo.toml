@@ -16,7 +16,7 @@ ml-kem = "0.2"
 # Pinned to match opaque-ke 4.0.1's ecosystem (hkdf 0.12, sha2 0.10)
 # When opaque-ke 4.1.0 stabilizes, review native kem feature
 hkdf = "0.12"
-sha2 = "0.10"
+sha2 = "0.11"
 zeroize = { version = "1.8", features = ["derive"] }
 
 [dev-dependencies]
