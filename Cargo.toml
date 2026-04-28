@@ -1,11 +1,12 @@
 [package]
 name = "opaque-ke-hybrid"
-version = "0.0.2"
+version = "0.1.0"
 edition = "2024"
-authors = [""]
+authors = ["Thomas <tom@unebaguette.fr>"]
 description = "ML-KEM hybrid extension for opaque-ke"
 repository = "https://github.com/UneBaguette/opaque-ke-hybrid"
-license = "MIT"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
 keywords = ["opaque", "pake", "ml-kem", "post-quantum", "hybrid"]
 categories = ["cryptography", "authentication"]
 

@@ -68,4 +68,4 @@ need post-quantum hardening today.** For new projects, wait for
 
 ## License
 
-This implementation is licensed under the [MIT License](LICENSE).
+This implementation is dual-licensed under the [MIT License](LICENSE-MIT) and the [Apache-2.0 License](LICENSE-APACHE).

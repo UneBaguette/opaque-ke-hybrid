@@ -354,7 +354,7 @@ dependencies = [
 
 [[package]]
 name = "opaque-ke-hybrid"
-version = "0.0.2"
+version = "0.1.0"
 dependencies = [
  "hkdf",
  "ml-kem",
