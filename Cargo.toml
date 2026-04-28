@@ -20,7 +20,7 @@ sha2 = "0.10"
 zeroize = { version = "1.8", features = ["derive"] }
 
 [dev-dependencies]
-rand = "=0.8.6"
+rand = "=0.10.1"
 
 [features]
 default = ["ristretto255"]
